@@ -1,0 +1,21 @@
+{
+    "name": "BRIGHT GOLDEN GOLD",
+    "short_name": "BGG Rates",
+    "description": "Live Precious Metal Rates for Gold, Silver, and Platinum.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#0c0a09",
+    "theme_color": "#facc15",
+    "icons": [
+        {
+            "src": "images/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "images/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}
