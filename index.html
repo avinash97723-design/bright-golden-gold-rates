@@ -16,7 +16,7 @@
             color: #f5f5f5; /* Off-white text */
         }
         .header-bg {
-            background: linear-gradient(145deg, #292524, #1c1917); /* Subtle dark gradient */
+            background: linear-gradient(145deg, #292524, #1c1917); /* Subtle dark dark gradient */
             border-bottom: 3px solid #facc15; /* Gold line */
         }
         .gold-accent {
@@ -118,9 +118,7 @@
         // =========================================================================
         // === 1. API CONFIGURATION (API Key aur URL yahan daalein) ===
         // =========================================================================
-        // MetalpriceAPI se account bana kar yahan apni asli key aur URL daalein.
         const REAL_API_KEY = "YOUR_KEY_HERE"; 
-        // Example URL for a free tier (usually latest rates, base USD/Gram/Ounce)
         const REAL_API_URL = "https://api.metalpriceapi.com/v1/latest?api_key="; 
         
         // =========================================================================
@@ -128,60 +126,39 @@
         // --- State and Configuration ---
         let currentActiveTab = 'Gold';
         let currentCurrency = {}; 
-        let currentBaseRates = {}; // To store the latest rates fetched from the API (in USD)
+        let currentBaseRates = {}; 
         
-        // Mock base rates (Used as a fallback and to calculate Karat percentages)
         const MOCK_BASE_RATES_USD_PER_GRAM = {
-            Gold: 65.00,  // XAU/USD per 1g
-            Silver: 0.80, // XAG/USD per 1g
-            Platinum: 35.00 // XPT/USD per 1g
+            Gold: 65.00,  
+            Silver: 0.80, 
+            Platinum: 35.00 
         };
 
         // --- Currency Logic ---
-
-        /**
-         * Browser language ke aadhar par currency aur conversion factor nirdharit karta hai.
-         */
         function getCurrentCurrency() {
             const lang = navigator.language.toUpperCase();
             
-            // Dubai/UAE Check (AED)
             if (lang.includes('AE') || lang.includes('AR-')) {
-                // 1 USD = 3.67 AED (Fixed Rate)
-                return { code: 'AED', symbol: 'د.إ', factor: 3.67, baseUnit: 10 }; // 10 Grams Gold base
+                return { code: 'AED', symbol: 'د.إ', factor: 3.67, baseUnit: 10 }; 
             } 
-            // India Check (INR)
             else if (lang.includes('IN') || lang.includes('HI-')) {
-                // 1 USD = approx 83.5 INR (Using a general rate)
-                return { code: 'INR', symbol: '₹', factor: 83.5, baseUnit: 10 }; // 10 Grams Gold base
+                return { code: 'INR', symbol: '₹', factor: 83.5, baseUnit: 10 }; 
             }
-            // Default: USA/International (USD)
-            return { code: 'USD', symbol: '$', factor: 1.0, baseUnit: 1 }; // 1 Gram Gold base
+            return { code: 'USD', symbol: '$', factor: 1.0, baseUnit: 1 }; 
         }
 
         // --- Data Processing ---
-
-        /**
-         * Fetched API data ko standard format mein convert karta hai.
-         * @param {object} apiData - The JSON response from the metal API.
-         * @param {object} currencyConfig - Current currency configuration.
-         * @returns {Array<object>} Formatted rates array.
-         */
         function processRates(baseRatesUSD, currencyConfig) {
             const ratesData = [];
             const { symbol, factor, baseUnit } = currencyConfig;
 
-            // Karat Purity Percentages relative to 24K (99.9%)
             const KARAT_PURITY = {
-                '24K': 1.0,    // 99.9%
-                '22K': 0.9167, // 91.67%
-                '21K': 0.875,  // 87.5%
-                '18K': 0.75,   // 75.0%
-                '999': 1.0,    // For Platinum/Silver Purity
+                '24K': 1.0,    
+                '22K': 0.9167, 
+                '21K': 0.875,  
+                '18K': 0.75,   
+                '999': 1.0,    
             };
-            
-            // Assuming baseRatesUSD contains prices per 1 Gram in USD:
-            // { Gold: 65.00, Silver: 0.80, Platinum: 35.00 }
             
             const goldBasePrice = baseRatesUSD.Gold;
             const silverBasePrice = baseRatesUSD.Silver;
@@ -191,14 +168,10 @@
             for (const karat in KARAT_PURITY) {
                 if (karat.endsWith('K')) {
                     const purity = KARAT_PURITY[karat];
-                    
-                    // Price of 1g of this Karat in USD
                     const pricePerGramUSD = goldBasePrice * purity;
-                    
-                    // Price in local currency, for the base unit (1g or 10g)
                     const finalPriceLocal = pricePerGramUSD * baseUnit * factor;
 
-                    // Simulated Change (since real API doesn't give historical data for % change easily)
+                    // Simulated Change
                     const baseMockPrice = MOCK_BASE_RATES_USD_PER_GRAM.Gold * purity;
                     const changeAmountUSD = pricePerGramUSD - baseMockPrice;
                     const changeAmountLocal = changeAmountUSD * baseUnit * factor;
@@ -220,7 +193,6 @@
 
             // 2. SILVER (1 KG)
             {
-                // Price of 1kg (1000g) in USD
                 const pricePerKGUSD = silverBasePrice * 1000;
                 const finalPriceLocal = pricePerKGUSD * factor;
 
@@ -245,7 +217,6 @@
 
             // 3. PLATINUM (999 Purity)
             {
-                // Price of 1 Gram in USD (Using baseUnit for consistency with Gold display)
                 const pricePerBaseUnitUSD = platinumBasePrice * baseUnit;
                 const finalPriceLocal = pricePerBaseUnitUSD * factor;
 
@@ -269,10 +240,9 @@
             }
 
 
-            // Sort the data to ensure Gold Karats are ordered correctly
             ratesData.sort((a, b) => {
                 if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-                return b.karatOrder - a.karatOrder; // Descending for Karats
+                return b.karatOrder - a.karatOrder; 
             });
 
             return ratesData;
@@ -280,13 +250,8 @@
 
 
         // --- Data Fetching (API or Mock) ---
-
-        /**
-         * Real API se rates laane ki koshish karta hai, ya mock data use karta hai.
-         */
         async function fetchPreciousMetalRates() {
             if (REAL_API_KEY.includes('YOUR_KEY_HERE')) {
-                console.warn("API Key is missing. Using mock data for demonstration.");
                 return generateMockRates(currentCurrency);
             }
             
@@ -294,7 +259,6 @@
             const finalURL = `${REAL_API_URL}${REAL_API_KEY}&currencies=XAU,XAG,XPT&base=USD`; 
             
             try {
-                // Fetch call with exponential backoff for the API itself
                 let apiResponse = null;
                 for (let i = 0; i < 3; i++) {
                     const response = await fetch(finalURL);
@@ -309,7 +273,6 @@
                     throw new Error(apiResponse ? apiResponse.error.message : 'API call failed without response.');
                 }
                 
-                // We will simulate that the API returned the base prices in USD/Gram with slight fluctuation
                 const baseRatesUSD = {
                     Gold: MOCK_BASE_RATES_USD_PER_GRAM.Gold * (1 + (Math.random() - 0.5) * 0.005),
                     Silver: MOCK_BASE_RATES_USD_PER_GRAM.Silver * (1 + (Math.random() - 0.5) * 0.005),
@@ -325,19 +288,14 @@
             }
         }
         
-        /**
-         * Simulates live rate changes if API is not active.
-         */
         function generateMockRates(currencyConfig) {
-            const volatility = (Math.random() - 0.5) * 0.05; // -0.025 to +0.025 change factor
+            const volatility = (Math.random() - 0.5) * 0.05; 
             const simulatedRates = {};
 
-            // Apply simulated volatility to the MOCK base rates
             simulatedRates.Gold = MOCK_BASE_RATES_USD_PER_GRAM.Gold * (1 + volatility);
             simulatedRates.Silver = MOCK_BASE_RATES_USD_PER_GRAM.Silver * (1 + volatility);
             simulatedRates.Platinum = MOCK_BASE_RATES_USD_PER_GRAM.Platinum * (1 + volatility);
 
-            // Set the mock rates as the current base for consistency
             currentBaseRates = simulatedRates;
             
             return processRates(simulatedRates, currencyConfig);
@@ -376,14 +334,9 @@
             `;
         }
 
-        /**
-         * Rates ko tab ke hisaab se filter karke UI update karta hai.
-         * @param {Array<object>} allRates - All fetched metal rate data
-         */
         function updateUI(allRates) {
             const container = document.getElementById('rate-container');
             
-            // Filter rates based on the active tab
             const filteredRates = allRates.filter(rate => rate.metal === currentActiveTab);
 
             if (filteredRates.length === 0) {
@@ -396,10 +349,8 @@
                 return;
             }
 
-            // Render the cards
             container.innerHTML = filteredRates.map(createRateCard).join('');
             
-            // Hide loading indicator if present
             const loadingIndicator = document.getElementById('loading-indicator');
             if (loadingIndicator) loadingIndicator.style.display = 'none';
         }
@@ -409,7 +360,6 @@
         function setActiveTab(metalName) {
             currentActiveTab = metalName;
 
-            // Update tab styles
             ['Gold', 'Silver', 'Platinum'].forEach(metal => {
                 const tab = document.getElementById(`tab-${metal.toLowerCase()}`);
                 if (metal === metalName) {
@@ -421,7 +371,6 @@
                 }
             });
             
-            // Re-fetch or re-render based on new tab
             fetchAndUpdateRates();
         }
 
@@ -432,7 +381,6 @@
             const container = document.getElementById('rate-container');
 
             if (!container.querySelector('.card')) {
-                // Initial load
                 container.innerHTML = '';
                 container.appendChild(loadingIndicator);
                 loadingIndicator.style.display = 'flex';
@@ -446,7 +394,6 @@
                 console.error("Rates fetch error (Controller):", error);
                 if (retries > 0) {
                     const delay = Math.pow(2, 3 - retries) * 1000;
-                    console.log(`Retrying after ${delay}ms. Retries left: ${retries - 1}`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return fetchAndUpdateRates(retries - 1);
                 } else {
@@ -461,23 +408,6 @@
             }
         }
         
-        // --- Service Worker Registration (New Code) ---
-        // PWA functionality ke liye yeh zaroori hai.
-        function registerServiceWorker() {
-             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(registration => {
-                            console.log('Service Worker registered successfully with scope: ', registration.scope);
-                        })
-                        .catch(err => {
-                            console.log('Service Worker registration failed: ', err);
-                        });
-                });
-            }
-        }
-
-
         // --- App Initialization ---
         window.onload = function() {
             // 1. Current currency set karo
@@ -490,10 +420,7 @@
             // 3. Har 5 seconds mein rates update karte raho
             setInterval(fetchAndUpdateRates, 5000); 
             
-            // 4. Service Worker Register karo
-            registerServiceWorker();
-
-            // 5. Ensure initial tab is active
+            // 4. Ensure initial tab is active
             setActiveTab('Gold');
         };
     </script>
