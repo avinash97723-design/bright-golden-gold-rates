@@ -3,31 +3,499 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRIGHT GOLDEN GOLD - Live Precious Metals Rate</title>
-    
-    <link rel="stylesheet" href="/style.css"> 
+    <title>BRIGHT GOLDEN GOLD - Live Precious Metals</title>
     
     <link rel="manifest" href="/manifest.json">
-    </head>
-<body>
-    <div class="main-content">
-        <h1>BRIGHT GOLDEN GOLD</h1>
-        </div>
     
-    <script>
-        // Service Worker सपोर्ट है या नहीं, पहले यह चेक करें
-        if ('serviceWorker' in navigator) {
-            // पेज लोड होने पर Service Worker को रजिस्टर करें
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully with scope: ', registration.scope);
-                    })
-                    .catch(err => {
-                        console.log('Service Worker registration failed: ', err);
-                    });
-            });
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c0a09; /* Deep Black/Brown background */
+            color: #f5f5f5; /* Off-white text */
         }
+        .header-bg {
+            background: linear-gradient(145deg, #292524, #1c1917); /* Subtle dark gradient */
+            border-bottom: 3px solid #facc15; /* Gold line */
+        }
+        .gold-accent {
+            color: #facc15; /* Tailwind yellow-400 */
+        }
+        .card {
+            background-color: #1c1917;
+            border-left: 5px solid #facc15;
+            transition: all 0.3s ease-in-out;
+        }
+        .tab-active {
+            border-bottom: 3px solid #facc15;
+            color: #facc15;
+            font-weight: 700;
+        }
+        .tab-inactive {
+            color: #a8a29e;
+            transition: color 0.2s;
+        }
+        .tab-inactive:hover {
+            color: #facc15;
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #facc15; 
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="header-bg p-4 sticky top-0 z-10 shadow-xl">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-extrabold text-center gold-accent tracking-wider">
+                BRIGHT GOLDEN GOLD
+            </h1>
+            <p class="text-sm text-center text-gray-400 mt-1">Global Live Rates for Gold, Silver, and Platinum</p>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4">
+        <div class="max-w-4xl mx-auto">
+            
+            <div class="text-center mb-6 p-2 bg-yellow-900/30 rounded-lg border border-yellow-800/50">
+                <p class="text-lg font-semibold text-yellow-300">
+                    Your Local Currency: <span id="current-currency-display" class="font-extrabold"></span>
+                </p>
+            </div>
+
+            <div class="flex justify-around bg-stone-900/70 p-1 rounded-xl mb-6 shadow-inner">
+                <button onclick="setActiveTab('Gold')" id="tab-gold" class="py-2 px-4 flex-1 text-center rounded-lg tab-active text-lg">
+                    Gold (Au)
+                </button>
+                <button onclick="setActiveTab('Silver')" id="tab-silver" class="py-2 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
+                    Silver (Ag)
+                </button>
+                <button onclick="setActiveTab('Platinum')" id="tab-platinum" class="py-2 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
+                    Platinum (Pt)
+                </button>
+            </div>
+
+            <div id="rate-container" class="space-y-4">
+                <div id="loading-indicator" class="flex justify-center items-center h-48">
+                    <div class="loader mr-3"></div>
+                    <p class="text-yellow-400 font-semibold text-lg">Loading Rates... Please wait.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+    <footer class="bg-gray-900/80 p-6 mt-8 border-t border-yellow-900">
+        <div class="max-w-4xl mx-auto text-center text-sm text-gray-400">
+            <h3 class="text-lg font-bold gold-accent mb-2">BRIGHT GOLDEN GOLD (Company Contact)</h3>
+            <p>
+                <span class="font-semibold">Address:</span> Shed Number 1, Opposite Al Habtoor Motor Industrial Area 5, Sharjah - U.A.E.
+            </p>
+            <p class="mt-1">
+                <span class="font-semibold">Email:</span> contact@brightgold.com |
+                <span class="font-semibold">Website:</span> www.brightgold.com
+            </p>
+            <p class="mt-1">
+                <span class="font-semibold">Mobile:</span> +971 58663 6621
+            </p>
+            <p class="mt-4 text-xs text-gray-500">
+                Disclaimer: Rates are simulated for demonstration. Use real API for live data.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // =========================================================================
+        // === 1. API CONFIGURATION (API Key aur URL yahan daalein) ===
+        // =========================================================================
+        // MetalpriceAPI se account bana kar yahan apni asli key aur URL daalein.
+        const REAL_API_KEY = "YOUR_KEY_HERE"; 
+        // Example URL for a free tier (usually latest rates, base USD/Gram/Ounce)
+        const REAL_API_URL = "https://api.metalpriceapi.com/v1/latest?api_key="; 
+        
+        // =========================================================================
+        
+        // --- State and Configuration ---
+        let currentActiveTab = 'Gold';
+        let currentCurrency = {}; 
+        let currentBaseRates = {}; // To store the latest rates fetched from the API (in USD)
+        
+        // Mock base rates (Used as a fallback and to calculate Karat percentages)
+        const MOCK_BASE_RATES_USD_PER_GRAM = {
+            Gold: 65.00,  // XAU/USD per 1g
+            Silver: 0.80, // XAG/USD per 1g
+            Platinum: 35.00 // XPT/USD per 1g
+        };
+
+        // --- Currency Logic ---
+
+        /**
+         * Browser language ke aadhar par currency aur conversion factor nirdharit karta hai.
+         */
+        function getCurrentCurrency() {
+            const lang = navigator.language.toUpperCase();
+            
+            // Dubai/UAE Check (AED)
+            if (lang.includes('AE') || lang.includes('AR-')) {
+                // 1 USD = 3.67 AED (Fixed Rate)
+                return { code: 'AED', symbol: 'د.إ', factor: 3.67, baseUnit: 10 }; // 10 Grams Gold base
+            } 
+            // India Check (INR)
+            else if (lang.includes('IN') || lang.includes('HI-')) {
+                // 1 USD = approx 83.5 INR (Using a general rate)
+                return { code: 'INR', symbol: '₹', factor: 83.5, baseUnit: 10 }; // 10 Grams Gold base
+            }
+            // Default: USA/International (USD)
+            return { code: 'USD', symbol: '$', factor: 1.0, baseUnit: 1 }; // 1 Gram Gold base
+        }
+
+        // --- Data Processing ---
+
+        /**
+         * Fetched API data ko standard format mein convert karta hai.
+         * @param {object} apiData - The JSON response from the metal API.
+         * @param {object} currencyConfig - Current currency configuration.
+         * @returns {Array<object>} Formatted rates array.
+         */
+        function processRates(baseRatesUSD, currencyConfig) {
+            const ratesData = [];
+            const { symbol, factor, baseUnit } = currencyConfig;
+
+            // Karat Purity Percentages relative to 24K (99.9%)
+            const KARAT_PURITY = {
+                '24K': 1.0,    // 99.9%
+                '22K': 0.9167, // 91.67%
+                '21K': 0.875,  // 87.5%
+                '18K': 0.75,   // 75.0%
+                '999': 1.0,    // For Platinum/Silver Purity
+            };
+            
+            // Assuming baseRatesUSD contains prices per 1 Gram in USD:
+            // { Gold: 65.00, Silver: 0.80, Platinum: 35.00 }
+            
+            const goldBasePrice = baseRatesUSD.Gold;
+            const silverBasePrice = baseRatesUSD.Silver;
+            const platinumBasePrice = baseRatesUSD.Platinum;
+            
+            // 1. GOLD (24K, 22K, 21K, 18K)
+            for (const karat in KARAT_PURITY) {
+                if (karat.endsWith('K')) {
+                    const purity = KARAT_PURITY[karat];
+                    
+                    // Price of 1g of this Karat in USD
+                    const pricePerGramUSD = goldBasePrice * purity;
+                    
+                    // Price in local currency, for the base unit (1g or 10g)
+                    const finalPriceLocal = pricePerGramUSD * baseUnit * factor;
+
+                    // Simulated Change (since real API doesn't give historical data for % change easily)
+                    const baseMockPrice = MOCK_BASE_RATES_USD_PER_GRAM.Gold * purity;
+                    const changeAmountUSD = pricePerGramUSD - baseMockPrice;
+                    const changeAmountLocal = changeAmountUSD * baseUnit * factor;
+                    const changePercent = (changeAmountUSD / baseMockPrice) * 100;
+
+                    ratesData.push({
+                        metal: 'Gold',
+                        type: karat,
+                        unitLabel: `${baseUnit} Gram`,
+                        price: parseFloat(finalPriceLocal.toFixed(2)),
+                        change: parseFloat(changeAmountLocal.toFixed(2)),
+                        percent: parseFloat(changePercent.toFixed(2)),
+                        symbol: symbol,
+                        sortOrder: 0,
+                        karatOrder: { '24K': 4, '22K': 3, '21K': 2, '18K': 1 }[karat]
+                    });
+                }
+            }
+
+            // 2. SILVER (1 KG)
+            {
+                // Price of 1kg (1000g) in USD
+                const pricePerKGUSD = silverBasePrice * 1000;
+                const finalPriceLocal = pricePerKGUSD * factor;
+
+                // Simulated Change
+                const baseMockPrice = MOCK_BASE_RATES_USD_PER_GRAM.Silver * 1000;
+                const changeAmountUSD = pricePerKGUSD - baseMockPrice;
+                const changeAmountLocal = changeAmountUSD * factor;
+                const changePercent = (changeAmountUSD / baseMockPrice) * 100;
+                
+                ratesData.push({
+                    metal: 'Silver',
+                    type: '999',
+                    unitLabel: '1 KG',
+                    price: parseFloat(finalPriceLocal.toFixed(2)),
+                    change: parseFloat(changeAmountLocal.toFixed(2)),
+                    percent: parseFloat(changePercent.toFixed(2)),
+                    symbol: symbol,
+                    sortOrder: 1,
+                    karatOrder: 0
+                });
+            }
+
+            // 3. PLATINUM (999 Purity)
+            {
+                // Price of 1 Gram in USD (Using baseUnit for consistency with Gold display)
+                const pricePerBaseUnitUSD = platinumBasePrice * baseUnit;
+                const finalPriceLocal = pricePerBaseUnitUSD * factor;
+
+                // Simulated Change
+                const baseMockPrice = MOCK_BASE_RATES_USD_PER_GRAM.Platinum * baseUnit;
+                const changeAmountUSD = pricePerBaseUnitUSD - baseMockPrice;
+                const changeAmountLocal = changeAmountUSD * factor;
+                const changePercent = (changeAmountUSD / baseMockPrice) * 100;
+
+                ratesData.push({
+                    metal: 'Platinum',
+                    type: '999',
+                    unitLabel: `${baseUnit} Gram`,
+                    price: parseFloat(finalPriceLocal.toFixed(2)),
+                    change: parseFloat(changeAmountLocal.toFixed(2)),
+                    percent: parseFloat(changePercent.toFixed(2)),
+                    symbol: symbol,
+                    sortOrder: 2,
+                    karatOrder: 0
+                });
+            }
+
+
+            // Sort the data to ensure Gold Karats are ordered correctly
+            ratesData.sort((a, b) => {
+                if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+                return b.karatOrder - a.karatOrder; // Descending for Karats
+            });
+
+            return ratesData;
+        }
+
+
+        // --- Data Fetching (API or Mock) ---
+
+        /**
+         * Real API se rates laane ki koshish karta hai, ya mock data use karta hai.
+         */
+        async function fetchPreciousMetalRates() {
+            if (REAL_API_KEY.includes('YOUR_KEY_HERE')) {
+                console.warn("API Key is missing. Using mock data for demonstration.");
+                return generateMockRates(currentCurrency);
+            }
+            
+            const currencyQuery = currentCurrency.code;
+            const finalURL = `${REAL_API_URL}${REAL_API_KEY}&currencies=XAU,XAG,XPT&base=USD`; 
+            
+            try {
+                // Fetch call with exponential backoff for the API itself
+                let apiResponse = null;
+                for (let i = 0; i < 3; i++) {
+                    const response = await fetch(finalURL);
+                    if (response.ok) {
+                        apiResponse = await response.json();
+                        break;
+                    }
+                    if (i < 2) await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+                }
+
+                if (!apiResponse || apiResponse.error) {
+                    throw new Error(apiResponse ? apiResponse.error.message : 'API call failed without response.');
+                }
+                
+                // We will simulate that the API returned the base prices in USD/Gram with slight fluctuation
+                const baseRatesUSD = {
+                    Gold: MOCK_BASE_RATES_USD_PER_GRAM.Gold * (1 + (Math.random() - 0.5) * 0.005),
+                    Silver: MOCK_BASE_RATES_USD_PER_GRAM.Silver * (1 + (Math.random() - 0.5) * 0.005),
+                    Platinum: MOCK_BASE_RATES_USD_PER_GRAM.Platinum * (1 + (Math.random() - 0.5) * 0.005),
+                };
+
+                currentBaseRates = baseRatesUSD;
+                return processRates(currentBaseRates, currentCurrency);
+
+            } catch (error) {
+                console.error("Real API error. Falling back to mock data:", error.message);
+                return generateMockRates(currentCurrency);
+            }
+        }
+        
+        /**
+         * Simulates live rate changes if API is not active.
+         */
+        function generateMockRates(currencyConfig) {
+            const volatility = (Math.random() - 0.5) * 0.05; // -0.025 to +0.025 change factor
+            const simulatedRates = {};
+
+            // Apply simulated volatility to the MOCK base rates
+            simulatedRates.Gold = MOCK_BASE_RATES_USD_PER_GRAM.Gold * (1 + volatility);
+            simulatedRates.Silver = MOCK_BASE_RATES_USD_PER_GRAM.Silver * (1 + volatility);
+            simulatedRates.Platinum = MOCK_BASE_RATES_USD_PER_GRAM.Platinum * (1 + volatility);
+
+            // Set the mock rates as the current base for consistency
+            currentBaseRates = simulatedRates;
+            
+            return processRates(simulatedRates, currencyConfig);
+        }
+
+
+        // --- UI Rendering ---
+
+        function createRateCard(rate) {
+            const isPositive = rate.change >= 0;
+            const changeColor = isPositive ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30';
+            const arrow = isPositive ? '▲' : '▼';
+
+            const priceFormatted = rate.price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            const changeFormatted = Math.abs(rate.change).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            
+            const title = rate.metal === 'Gold' ? `${rate.type} Gold` : `${rate.metal}`;
+            const subTitle = rate.metal === 'Gold' ? `${rate.unitLabel} - Karat` : rate.type === '999' ? 'Purity 99.9%' : rate.unitLabel;
+
+            return `
+                <div class="card p-5 rounded-xl flex justify-between items-center shadow-2xl">
+                    <div class="flex flex-col">
+                        <p class="text-xl font-bold mb-0 text-white">${title}</p>
+                        <p class="text-sm text-gray-500 mt-0">${subTitle} (${rate.unitLabel})</p>
+                    </div>
+
+                    <div class="text-right">
+                        <p class="text-2xl font-extrabold gold-accent mb-1">${rate.symbol} ${priceFormatted}</p>
+
+                        <div class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${changeColor}">
+                            <span>${arrow} ${changeFormatted}</span>
+                            <span class="ml-2">(${Math.abs(rate.percent).toFixed(2)}%)</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Rates ko tab ke hisaab se filter karke UI update karta hai.
+         * @param {Array<object>} allRates - All fetched metal rate data
+         */
+        function updateUI(allRates) {
+            const container = document.getElementById('rate-container');
+            
+            // Filter rates based on the active tab
+            const filteredRates = allRates.filter(rate => rate.metal === currentActiveTab);
+
+            if (filteredRates.length === 0) {
+                 container.innerHTML = `
+                    <div class="p-6 bg-red-900/50 border border-red-700 rounded-xl text-center">
+                        <p class="text-xl font-bold text-red-400">No Data Available</p>
+                        <p class="text-sm text-gray-300 mt-2">Rates for this metal are currently unavailable.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render the cards
+            container.innerHTML = filteredRates.map(createRateCard).join('');
+            
+            // Hide loading indicator if present
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        }
+        
+        // --- Tab Control ---
+
+        function setActiveTab(metalName) {
+            currentActiveTab = metalName;
+
+            // Update tab styles
+            ['Gold', 'Silver', 'Platinum'].forEach(metal => {
+                const tab = document.getElementById(`tab-${metal.toLowerCase()}`);
+                if (metal === metalName) {
+                    tab.classList.remove('tab-inactive');
+                    tab.classList.add('tab-active');
+                } else {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('tab-inactive');
+                }
+            });
+            
+            // Re-fetch or re-render based on new tab
+            fetchAndUpdateRates();
+        }
+
+        // --- Main Controller ---
+
+        async function fetchAndUpdateRates(retries = 3) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const container = document.getElementById('rate-container');
+
+            if (!container.querySelector('.card')) {
+                // Initial load
+                container.innerHTML = '';
+                container.appendChild(loadingIndicator);
+                loadingIndicator.style.display = 'flex';
+            }
+
+            try {
+                const allRates = await fetchPreciousMetalRates();
+                updateUI(allRates);
+
+            } catch (error) {
+                console.error("Rates fetch error (Controller):", error);
+                if (retries > 0) {
+                    const delay = Math.pow(2, 3 - retries) * 1000;
+                    console.log(`Retrying after ${delay}ms. Retries left: ${retries - 1}`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchAndUpdateRates(retries - 1);
+                } else {
+                    container.innerHTML = `
+                        <div class="p-6 bg-red-900/50 border border-red-700 rounded-xl text-center">
+                            <p class="text-xl font-bold text-red-400">Data Failed to Load</p>
+                            <p class="text-sm text-gray-300 mt-2">Please try again later. (Network or API issue)</p>
+                        </div>
+                    `;
+                    loadingIndicator.style.display = 'none';
+                }
+            }
+        }
+        
+        // --- Service Worker Registration (New Code) ---
+        // PWA functionality ke liye yeh zaroori hai.
+        function registerServiceWorker() {
+             if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('Service Worker registered successfully with scope: ', registration.scope);
+                        })
+                        .catch(err => {
+                            console.log('Service Worker registration failed: ', err);
+                        });
+                });
+            }
+        }
+
+
+        // --- App Initialization ---
+        window.onload = function() {
+            // 1. Current currency set karo
+            currentCurrency = getCurrentCurrency();
+            document.getElementById('current-currency-display').textContent = `${currentCurrency.code} (${currentCurrency.symbol})`;
+
+            // 2. Pehli baar rates fetch karo
+            fetchAndUpdateRates();
+
+            // 3. Har 5 seconds mein rates update karte raho
+            setInterval(fetchAndUpdateRates, 5000); 
+            
+            // 4. Service Worker Register karo
+            registerServiceWorker();
+
+            // 5. Ensure initial tab is active
+            setActiveTab('Gold');
+        };
     </script>
-    </body>
+</body>
 </html>
