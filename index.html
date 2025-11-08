@@ -12,30 +12,24 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            /* 1. NEW: Deeper, smoother black background */
-            background-color: #0F0F0F; 
-            color: #f5f5f5; 
+            background-color: #0c0a09; /* Deep Black/Brown background */
+            color: #f5f5f5; /* Off-white text */
         }
         .header-bg {
-            /* 1. NEW: Subtle dark gradient */
-            background: linear-gradient(145deg, #181818, #0F0F0F); 
-            border-bottom: 4px solid #FCD34D; /* 1. NEW: Richer gold border (Amber-300) */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+            background: linear-gradient(145deg, #292524, #1c1917); /* Subtle dark dark gradient */
+            border-bottom: 3px solid #facc15; /* Gold line */
         }
         .gold-accent {
-            /* 1. NEW: Amber accent for a richer gold look */
-            color: #FCD34D; /* Tailwind Amber-300 */
+            color: #facc15; /* Tailwind yellow-400 */
         }
         .card {
-            background-color: #181818; /* Darker card background */
-            border-left: 6px solid #FCD34D; /* Thicker and richer gold line */
+            background-color: #1c1917;
+            border-left: 5px solid #facc15;
             transition: all 0.3s ease-in-out;
-            /* 3. NEW: Soft, premium shadow */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
         }
         .tab-active {
-            border-bottom: 3px solid #FCD34D;
-            color: #FCD34D;
+            border-bottom: 3px solid #facc15;
+            color: #facc15;
             font-weight: 700;
         }
         .tab-inactive {
@@ -43,11 +37,11 @@
             transition: color 0.2s;
         }
         .tab-inactive:hover {
-            color: #FCD34D;
+            color: #facc15;
         }
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.2);
-            border-top: 4px solid #FCD34D; 
+            border-top: 4px solid #facc15; 
             border-radius: 50%;
             width: 30px;
             height: 30px;
@@ -61,59 +55,60 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <header class="header-bg p-5 sticky top-0 z-10">
+    <header class="header-bg p-4 sticky top-0 z-10 shadow-xl">
         <div class="max-w-4xl mx-auto">
-            <h1 class="text-5xl font-extrabold text-center gold-accent tracking-widest uppercase">
+            <h1 class="text-3xl font-extrabold text-center gold-accent tracking-wider">
                 BRIGHT GOLDEN GOLD
             </h1>
-            <p class="text-base text-center text-gray-400 mt-2">Global Live Rates for Gold, Silver, and Platinum</p>
+            <p class="text-sm text-center text-gray-400 mt-1">Global Live Rates for Gold, Silver, and Platinum</p>
         </div>
     </header>
 
     <main class="flex-grow p-4">
         <div class="max-w-4xl mx-auto">
             
-            <div class="text-center mb-8 p-3 bg-amber-900/30 rounded-xl border border-amber-800/50 shadow-lg">
-                <p class="text-lg font-semibold text-amber-300">
+            <div class="text-center mb-6 p-2 bg-yellow-900/30 rounded-lg border border-yellow-800/50">
+                <p class="text-lg font-semibold text-yellow-300">
                     Your Local Currency: <span id="current-currency-display" class="font-extrabold"></span>
                 </p>
             </div>
 
-            <div class="flex justify-around bg-stone-900/70 p-1 rounded-xl mb-8 shadow-xl">
-                <button onclick="setActiveTab('Gold')" id="tab-gold" class="py-3 px-4 flex-1 text-center rounded-lg tab-active text-lg">
+            <div class="flex justify-around bg-stone-900/70 p-1 rounded-xl mb-6 shadow-inner">
+                <button onclick="setActiveTab('Gold')" id="tab-gold" class="py-2 px-4 flex-1 text-center rounded-lg tab-active text-lg">
                     Gold (Au)
                 </button>
-                <button onclick="setActiveTab('Silver')" id="tab-silver" class="py-3 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
+                <button onclick="setActiveTab('Silver')" id="tab-silver" class="py-2 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
                     Silver (Ag)
                 </button>
-                <button onclick="setActiveTab('Platinum')" id="tab-platinum" class="py-3 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
+                <button onclick="setActiveTab('Platinum')" id="tab-platinum" class="py-2 px-4 flex-1 text-center rounded-lg tab-inactive text-lg">
                     Platinum (Pt)
                 </button>
             </div>
 
-            <div id="rate-container" class="space-y-6">
+            <div id="rate-container" class="space-y-4">
                 <div id="loading-indicator" class="flex justify-center items-center h-48">
                     <div class="loader mr-3"></div>
-                    <p class="text-amber-400 font-semibold text-xl">Loading Live Rates...</p>
+                    <p class="text-yellow-400 font-semibold text-lg">Loading Rates... Please wait.</p>
                 </div>
             </div>
 
         </div>
     </main>
     
-    <footer class="bg-gray-900/80 p-8 mt-10 border-t border-amber-900 shadow-inner">
+    <footer class="bg-gray-900/80 p-6 mt-8 border-t border-yellow-900">
         <div class="max-w-4xl mx-auto text-center text-sm text-gray-400">
-            <h3 class="text-xl font-bold gold-accent mb-3">BRIGHT GOLDEN GOLD (Contact)</h3>
+            <h3 class="text-lg font-bold gold-accent mb-2">BRIGHT GOLDEN GOLD (Company Contact)</h3>
             <p>
-                <span class="font-semibold text-gray-300">Address:</span> Shed Number 1, Opposite Al Habtoor Motor Industrial Area 5, Sharjah - U.A.E.
-            </p>
-            <p class="mt-2">
-                <span class="font-semibold text-gray-300">Email:</span> contact@brightgold.com 
+                <span class="font-semibold">Address:</span> Shed Number 1, Opposite Al Habtoor Motor Industrial Area 5, Sharjah - U.A.E.
             </p>
             <p class="mt-1">
-                <span class="font-semibold text-gray-300">Mobile:</span> +971 58663 6621
+                <span class="font-semibold">Email:</span> contact@brightgold.com |
+                <span class="font-semibold">Website:</span> www.brightgold.com
             </p>
-            <p class="mt-6 text-xs text-gray-500">
+            <p class="mt-1">
+                <span class="font-semibold">Mobile:</span> +971 58663 6621
+            </p>
+            <p class="mt-4 text-xs text-gray-500">
                 Disclaimer: Rates are simulated for demonstration. Use real API for live data.
             </p>
         </div>
@@ -318,19 +313,17 @@
             const changeFormatted = Math.abs(rate.change).toLocaleString('en-IN', { minimumFractionDigits: 2 });
             
             const title = rate.metal === 'Gold' ? `${rate.type} Gold` : `${rate.metal}`;
-            
-            // 2. NEW: Sub-title ko thoda bada kiya gaya
             const subTitle = rate.metal === 'Gold' ? `${rate.unitLabel} - Karat` : rate.type === '999' ? 'Purity 99.9%' : rate.unitLabel;
 
             return `
-                <div class="card p-6 rounded-xl flex justify-between items-center">
+                <div class="card p-5 rounded-xl flex justify-between items-center shadow-2xl">
                     <div class="flex flex-col">
                         <p class="text-xl font-bold mb-0 text-white">${title}</p>
-                        <p class="text-base text-gray-400 mt-1">${subTitle}</p>
+                        <p class="text-sm text-gray-500 mt-0">${subTitle} (${rate.unitLabel})</p>
                     </div>
 
                     <div class="text-right">
-                        <p class="text-3xl font-extrabold gold-accent mb-1">${rate.symbol} ${priceFormatted}</p>
+                        <p class="text-2xl font-extrabold gold-accent mb-1">${rate.symbol} ${priceFormatted}</p>
 
                         <div class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${changeColor}">
                             <span>${arrow} ${changeFormatted}</span>
